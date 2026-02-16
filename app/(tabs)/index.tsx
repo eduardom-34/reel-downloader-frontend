@@ -37,6 +37,7 @@ import {
   fetchReelInfo,
   type ReelInfo,
 } from "@/constants/api";
+import { useHistory } from "@/contexts/history-context";
 import { useSession } from "@/contexts/session-context";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useThemeColor } from "@/hooks/use-theme-color";
@@ -76,6 +77,7 @@ export default function HomeScreen() {
   const isDark = colorScheme === "dark";
 
   const { isLoggedIn, cookiesForApi } = useSession();
+  const { addRecord } = useHistory();
   const router = useRouter();
 
   const searchScale = useSharedValue(1);
@@ -169,7 +171,8 @@ export default function HomeScreen() {
     const { status } = await MediaLibrary.getPermissionsAsync(true);
     if (status === "granted") return;
 
-    const { status: newStatus } = await MediaLibrary.requestPermissionsAsync(true);
+    const { status: newStatus } =
+      await MediaLibrary.requestPermissionsAsync(true);
     if (newStatus === "granted") return;
 
     // On Android 10+ saveToLibraryAsync may work without explicit permission.
@@ -237,6 +240,14 @@ export default function HomeScreen() {
       }
 
       setStatus("success");
+
+      addRecord({
+        url: url.trim(),
+        title: reelInfo.title,
+        uploader: reelInfo.uploader,
+        thumbnail: reelInfo.thumbnail,
+        duration: reelInfo.duration,
+      });
 
       try {
         await Notifications.scheduleNotificationAsync({
