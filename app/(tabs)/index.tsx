@@ -156,6 +156,22 @@ export default function HomeScreen() {
     }
   };
 
+  const ensureMediaPermissions = async () => {
+    const { status } = await MediaLibrary.getPermissionsAsync(true);
+    if (status === "granted") return;
+
+    const { status: newStatus } = await MediaLibrary.requestPermissionsAsync(true);
+    if (newStatus === "granted") return;
+
+    // On Android 10+ saveToLibraryAsync may work without explicit permission.
+    // Only throw if we're on an older Android that truly needs it.
+    if (Platform.OS === "android" && Platform.Version < 29) {
+      throw new Error(
+        "Se necesitan permisos para guardar el video. Ve a Ajustes > Apps > Reel Downloader > Permisos y activa el almacenamiento.",
+      );
+    }
+  };
+
   const handleDownload = async () => {
     if (!reelInfo) return;
     animateButton(downloadScale);
@@ -164,12 +180,6 @@ export default function HomeScreen() {
     setErrorMessage("");
 
     try {
-      const { status: permStatus } =
-        await MediaLibrary.requestPermissionsAsync(true);
-      if (permStatus !== "granted") {
-        throw new Error("Se necesitan permisos para guardar el video.");
-      }
-
       const videoUrl = reelInfo.video_url;
       const safeName = (reelInfo.title || "reel")
         .replace(/[^a-zA-Z0-9_\- ]/g, "")
@@ -207,6 +217,7 @@ export default function HomeScreen() {
       }
 
       setStatus("saving");
+      await ensureMediaPermissions();
       await MediaLibrary.saveToLibraryAsync(fileUri);
 
       try {
