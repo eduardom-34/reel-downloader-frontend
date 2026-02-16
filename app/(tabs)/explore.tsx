@@ -1,112 +1,132 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { StyleSheet, View, Platform, ScrollView } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
-import { Collapsible } from '@/components/ui/collapsible';
-import { ExternalLink } from '@/components/external-link';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Fonts } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
-export default function TabTwoScreen() {
+export default function InfoScreen() {
+  const colorScheme = useColorScheme() ?? 'light';
+  const isDark = colorScheme === 'dark';
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }}
-      headerImage={
-        <IconSymbol
-          size={310}
-          color="#808080"
-          name="chevron.left.forwardslash.chevron.right"
-          style={styles.headerImage}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText
-          type="title"
-          style={{
-            fontFamily: Fonts.rounded,
-          }}>
-          Explore
-        </ThemedText>
-      </ThemedView>
-      <ThemedText>This app includes example code to help you get started.</ThemedText>
-      <Collapsible title="File-based routing">
-        <ThemedText>
-          This app has two screens:{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/explore.tsx</ThemedText>
-        </ThemedText>
-        <ThemedText>
-          The layout file in <ThemedText type="defaultSemiBold">app/(tabs)/_layout.tsx</ThemedText>{' '}
-          sets up the tab navigator.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/router/introduction">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Android, iOS, and web support">
-        <ThemedText>
-          You can open this project on Android, iOS, and the web. To open the web version, press{' '}
-          <ThemedText type="defaultSemiBold">w</ThemedText> in the terminal running this project.
-        </ThemedText>
-      </Collapsible>
-      <Collapsible title="Images">
-        <ThemedText>
-          For static images, you can use the <ThemedText type="defaultSemiBold">@2x</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">@3x</ThemedText> suffixes to provide files for
-          different screen densities
-        </ThemedText>
-        <Image
-          source={require('@/assets/images/react-logo.png')}
-          style={{ width: 100, height: 100, alignSelf: 'center' }}
-        />
-        <ExternalLink href="https://reactnative.dev/docs/images">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Light and dark mode components">
-        <ThemedText>
-          This template has light and dark mode support. The{' '}
-          <ThemedText type="defaultSemiBold">useColorScheme()</ThemedText> hook lets you inspect
-          what the user&apos;s current color scheme is, and so you can adjust UI colors accordingly.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Animations">
-        <ThemedText>
-          This template includes an example of an animated component. The{' '}
-          <ThemedText type="defaultSemiBold">components/HelloWave.tsx</ThemedText> component uses
-          the powerful{' '}
-          <ThemedText type="defaultSemiBold" style={{ fontFamily: Fonts.mono }}>
-            react-native-reanimated
-          </ThemedText>{' '}
-          library to create a waving hand animation.
-        </ThemedText>
-        {Platform.select({
-          ios: (
-            <ThemedText>
-              The <ThemedText type="defaultSemiBold">components/ParallaxScrollView.tsx</ThemedText>{' '}
-              component provides a parallax effect for the header image.
-            </ThemedText>
-          ),
-        })}
-      </Collapsible>
-    </ParallaxScrollView>
+    <ThemedView style={styles.container}>
+      <View style={styles.header}>
+        <View style={styles.headerGradient}>
+          <Ionicons name="information-circle" size={40} color="#fff" />
+          <ThemedText style={styles.headerTitle}>Informacion</ThemedText>
+        </View>
+      </View>
+
+      <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
+        <View style={[styles.card, isDark && styles.cardDark]}>
+          <View style={styles.cardHeader}>
+            <Ionicons name="shield-checkmark" size={22} color="#7C3AED" />
+            <ThemedText style={styles.cardTitle}>Uso responsable</ThemedText>
+          </View>
+          <ThemedText style={styles.cardText}>
+            Esta app es para uso personal. Respeta los derechos de autor y la
+            privacidad de los creadores de contenido.
+          </ThemedText>
+        </View>
+
+        <View style={[styles.card, isDark && styles.cardDark]}>
+          <View style={styles.cardHeader}>
+            <Ionicons name="help-circle" size={22} color="#3B82F6" />
+            <ThemedText style={styles.cardTitle}>Como funciona</ThemedText>
+          </View>
+          <ThemedText style={styles.cardText}>
+            La app toma el enlace publico del Reel de Instagram, obtiene el video
+            y lo guarda directamente en la galeria de tu dispositivo.
+          </ThemedText>
+        </View>
+
+        <View style={[styles.card, isDark && styles.cardDark]}>
+          <View style={styles.cardHeader}>
+            <Ionicons name="alert-circle" size={22} color="#F59E0B" />
+            <ThemedText style={styles.cardTitle}>Importante</ThemedText>
+          </View>
+          <ThemedText style={styles.cardText}>
+            Solo se pueden descargar Reels de cuentas publicas. Los Reels de
+            cuentas privadas no estan disponibles.
+          </ThemedText>
+        </View>
+
+        <View style={[styles.card, isDark && styles.cardDark]}>
+          <View style={styles.cardHeader}>
+            <Ionicons name="code-slash" size={22} color="#10B981" />
+            <ThemedText style={styles.cardTitle}>Version</ThemedText>
+          </View>
+          <ThemedText style={styles.cardText}>Reel Downloader v1.0.0</ThemedText>
+        </View>
+      </ScrollView>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  headerImage: {
-    color: '#808080',
-    bottom: -90,
-    left: -35,
-    position: 'absolute',
+  container: {
+    flex: 1,
   },
-  titleContainer: {
+  header: {
+    overflow: 'hidden',
+  },
+  headerGradient: {
+    backgroundColor: '#7C3AED',
+    paddingTop: Platform.OS === 'ios' ? 60 : 48,
+    paddingBottom: 28,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
+  },
+  headerTitle: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: '#fff',
+    marginTop: 10,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 20,
+  },
+  scrollContent: {
+    paddingTop: 24,
+    paddingBottom: 32,
+  },
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    padding: 18,
+    marginBottom: 14,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.06,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  },
+  cardDark: {
+    backgroundColor: '#1E1E2E',
+  },
+  cardHeader: {
     flexDirection: 'row',
-    gap: 8,
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 10,
+  },
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  cardText: {
+    fontSize: 14,
+    lineHeight: 22,
+    opacity: 0.8,
   },
 });
