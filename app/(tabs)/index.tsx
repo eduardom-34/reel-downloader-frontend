@@ -5,6 +5,7 @@ import * as Clipboard from "expo-clipboard";
 import { File as ExpoFile, Paths } from "expo-file-system";
 import { Image } from "expo-image";
 import * as MediaLibrary from "expo-media-library";
+import * as Notifications from "expo-notifications";
 import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -89,6 +90,14 @@ export default function HomeScreen() {
 
   useEffect(() => {
     checkServerHealth().then(setServerOnline);
+    try {
+      Notifications.setNotificationChannelAsync("downloads", {
+        name: "Descargas",
+        importance: Notifications.AndroidImportance.HIGH,
+      });
+    } catch {
+      // Notifications not available (Expo Go)
+    }
   }, []);
 
   const animateButton = (sharedValue: SharedValue<number>) => {
@@ -228,6 +237,21 @@ export default function HomeScreen() {
       }
 
       setStatus("success");
+
+      try {
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            title: "Reel descargado!",
+            body: reelInfo.title
+              ? `"${reelInfo.title}" se guardo en tu galeria.`
+              : "El video se guardo en tu galeria.",
+            sound: true,
+          },
+          trigger: null,
+        });
+      } catch {
+        // Notifications not available (Expo Go)
+      }
     } catch (err) {
       setStatus("error");
       if (err instanceof ApiError) {
