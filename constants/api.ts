@@ -9,7 +9,8 @@
  * @format
  */
 
-export const API_BASE_URL = "http://192.168.1.10:8000";
+export const API_BASE_URL =
+  "https://reel-downloader-backend-production.up.railway.app";
 
 const HEALTH_TIMEOUT_MS = 5_000;
 const INFO_TIMEOUT_MS = 15_000;
@@ -81,7 +82,13 @@ export async function checkServerHealth(): Promise<boolean> {
   }
 }
 
-export async function fetchReelInfo(url: string): Promise<ReelInfo> {
+export async function fetchReelInfo(
+  url: string,
+  cookiesTxt?: string,
+): Promise<ReelInfo> {
+  const body: Record<string, string> = { url };
+  if (cookiesTxt) body.cookies_txt = cookiesTxt;
+
   let response: Response;
   try {
     response = await fetchWithTimeout(
@@ -89,7 +96,7 @@ export async function fetchReelInfo(url: string): Promise<ReelInfo> {
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify(body),
       },
       INFO_TIMEOUT_MS,
     );
@@ -119,7 +126,11 @@ export async function fetchReelInfo(url: string): Promise<ReelInfo> {
 
 export async function downloadReelBinary(
   url: string,
+  cookiesTxt?: string,
 ): Promise<{ blob: Blob; filename: string }> {
+  const body: Record<string, string> = { url };
+  if (cookiesTxt) body.cookies_txt = cookiesTxt;
+
   let response: Response;
   try {
     response = await fetchWithTimeout(
@@ -127,7 +138,7 @@ export async function downloadReelBinary(
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify(body),
       },
       DOWNLOAD_TIMEOUT_MS,
     );

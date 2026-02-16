@@ -39,6 +39,15 @@
             "backgroundColor": "#000000"
           }
         }
+      ],
+      "expo-secure-store",
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Permite guardar los Reels descargados en tu galeria.",
+          "savePhotosPermission": "Permite guardar los Reels descargados en tu galeria.",
+          "isAccessMediaLocationEnabled": true
+        }
       ]
     ],
     "experiments": {

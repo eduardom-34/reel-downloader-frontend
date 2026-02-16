@@ -5,10 +5,12 @@ import { Platform } from 'react-native';
 import { HapticTab } from '@/components/haptic-tab';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useSession } from '@/contexts/session-context';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const { isLoggedIn } = useSession();
 
   return (
     <Tabs
@@ -40,12 +42,20 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="session"
         options={{
-          title: 'Info',
+          title: 'Sesion',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="information-circle-outline" size={size} color={color} />
+            <Ionicons
+              name={isLoggedIn ? 'person-circle' : 'person-circle-outline'}
+              size={size}
+              color={color}
+            />
           ),
+          tabBarBadge: isLoggedIn ? undefined : '!',
+          tabBarBadgeStyle: isLoggedIn
+            ? undefined
+            : { backgroundColor: '#F59E0B', fontSize: 10, minWidth: 16, height: 16, lineHeight: 16 },
         }}
       />
     </Tabs>

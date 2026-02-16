@@ -29,15 +29,17 @@ import Animated, {
 
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { useColorScheme } from "@/hooks/use-color-scheme";
-import { useThemeColor } from "@/hooks/use-theme-color";
 import {
   ApiError,
   checkServerHealth,
   downloadReelBinary,
   fetchReelInfo,
   type ReelInfo,
-} from "../../constants/api";
+} from "@/constants/api";
+import { useSession } from "@/contexts/session-context";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useThemeColor } from "@/hooks/use-theme-color";
+import { useRouter } from "expo-router";
 
 type AppStatus =
   | "idle"
@@ -64,12 +66,16 @@ export default function HomeScreen() {
   const [reelInfo, setReelInfo] = useState<ReelInfo | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [serverOnline, setServerOnline] = useState<boolean | null>(null);
+  const [is403, setIs403] = useState(false);
   const inputRef = useRef<TextInput>(null);
 
   const colorScheme = useColorScheme() ?? "light";
   const textColor = useThemeColor({}, "text");
   const iconColor = useThemeColor({}, "icon");
   const isDark = colorScheme === "dark";
+
+  const { isLoggedIn, cookiesForApi } = useSession();
+  const router = useRouter();
 
   const searchScale = useSharedValue(1);
   const searchAnimatedStyle = useAnimatedStyle(() => ({
@@ -109,6 +115,7 @@ export default function HomeScreen() {
     setStatus("idle");
     setReelInfo(null);
     setErrorMessage("");
+    setIs403(false);
     inputRef.current?.focus();
   };
 
@@ -128,16 +135,19 @@ export default function HomeScreen() {
 
     setErrorMessage("");
     setReelInfo(null);
+    setIs403(false);
     setStatus("fetching_info");
 
     try {
-      const info = await fetchReelInfo(trimmedUrl);
+      const cookies = cookiesForApi();
+      const info = await fetchReelInfo(trimmedUrl, cookies);
       setReelInfo(info);
       setStatus("preview");
     } catch (err) {
       setStatus("error");
       if (err instanceof ApiError) {
         setErrorMessage(err.message);
+        setIs403(err.status === 403);
       } else {
         setErrorMessage(
           "No se pudo conectar al servidor. Verifica tu conexion.",
@@ -155,7 +165,7 @@ export default function HomeScreen() {
 
     try {
       const { status: permStatus } =
-        await MediaLibrary.requestPermissionsAsync();
+        await MediaLibrary.requestPermissionsAsync(true);
       if (permStatus !== "granted") {
         throw new Error("Se necesitan permisos para guardar el video.");
       }
@@ -181,7 +191,11 @@ export default function HomeScreen() {
         );
         fileUri = downloaded.uri;
       } catch {
-        const { blob, filename } = await downloadReelBinary(url.trim());
+        const cookies = cookiesForApi();
+        const { blob, filename } = await downloadReelBinary(
+          url.trim(),
+          cookies,
+        );
         const fallbackDest = new ExpoFile(Paths.cache, filename);
         const buffer = await blob.arrayBuffer();
         fallbackDest.write(new Uint8Array(buffer));
@@ -228,6 +242,7 @@ export default function HomeScreen() {
     setStatus("idle");
     setReelInfo(null);
     setErrorMessage("");
+    setIs403(false);
     inputRef.current?.focus();
   };
 
@@ -290,19 +305,32 @@ export default function HomeScreen() {
           <ThemedText style={styles.headerSubtitle}>
             Descarga Reels de Instagram facilmente
           </ThemedText>
-          {serverOnline !== null && (
+          <View style={styles.badgesRow}>
+            {serverOnline !== null && (
+              <View style={styles.serverBadge}>
+                <View
+                  style={[
+                    styles.serverDot,
+                    { backgroundColor: serverOnline ? "#34D399" : "#F87171" },
+                  ]}
+                />
+                <ThemedText style={styles.serverText}>
+                  {serverOnline ? "Conectado" : "Sin servidor"}
+                </ThemedText>
+              </View>
+            )}
             <View style={styles.serverBadge}>
               <View
                 style={[
                   styles.serverDot,
-                  { backgroundColor: serverOnline ? "#34D399" : "#F87171" },
+                  { backgroundColor: isLoggedIn ? "#34D399" : "#F59E0B" },
                 ]}
               />
               <ThemedText style={styles.serverText}>
-                Servidor {serverOnline ? "conectado" : "desconectado"}
+                {isLoggedIn ? "Sesion activa" : "Sin sesion"}
               </ThemedText>
             </View>
-          )}
+          </View>
         </View>
       </View>
 
@@ -528,13 +556,32 @@ export default function HomeScreen() {
               )}
 
               {status === "error" && (
-                <TouchableOpacity
-                  onPress={handleRetry}
-                  style={styles.retryButton}
-                >
-                  <Ionicons name="refresh" size={16} color="#EF4444" />
-                  <ThemedText style={styles.retryText}>Reintentar</ThemedText>
-                </TouchableOpacity>
+                <View style={styles.errorActions}>
+                  <TouchableOpacity
+                    onPress={handleRetry}
+                    style={styles.retryButton}
+                  >
+                    <Ionicons name="refresh" size={16} color="#EF4444" />
+                    <ThemedText style={styles.retryText}>Reintentar</ThemedText>
+                  </TouchableOpacity>
+
+                  {is403 && !isLoggedIn && (
+                    <TouchableOpacity
+                      onPress={() => router.push("/session" as never)}
+                      style={styles.loginHintButton}
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons
+                        name="log-in-outline"
+                        size={16}
+                        color="#7C3AED"
+                      />
+                      <ThemedText style={styles.loginHintText}>
+                        Iniciar sesion
+                      </ThemedText>
+                    </TouchableOpacity>
+                  )}
+                </View>
               )}
             </View>
           </Animated.View>
@@ -608,15 +655,19 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.8)",
     marginTop: 4,
   },
+  badgesRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 10,
+  },
   serverBadge: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "rgba(255,255,255,0.15)",
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 20,
-    marginTop: 10,
-    gap: 6,
+    gap: 5,
   },
   serverDot: {
     width: 8,
@@ -906,14 +957,33 @@ const styles = StyleSheet.create({
   newDownloadTextDark: {
     color: "#C084FC",
   },
-  retryButton: {
+  errorActions: {
     flexDirection: "row",
     alignItems: "center",
     marginTop: 10,
+    gap: 16,
+  },
+  retryButton: {
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
   },
   retryText: {
     color: "#EF4444",
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  loginHintButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "#F3E8FF",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  loginHintText: {
+    color: "#7C3AED",
     fontSize: 13,
     fontWeight: "600",
   },
